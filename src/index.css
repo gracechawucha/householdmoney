@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #04100c;
+  background-image:
+    radial-gradient(900px 520px at 50% -8%, rgba(31, 122, 91, 0.55), transparent 70%),
+    radial-gradient(600px 400px at 100% 40%, rgba(16, 80, 60, 0.28), transparent 70%);
+  background-attachment: fixed;
+  color: #e8f5ef;
+  font-family: 'Manrope Variable', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl border border-line bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-sm;
+  }
+  .field {
+    @apply w-full rounded-2xl border border-line bg-black/25 px-4 py-3 text-[15px] text-white placeholder:text-mute/70 outline-none transition focus:border-mint/60 focus:bg-black/35;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/[0.04] px-3.5 py-2 text-[13px] font-semibold text-white/80 transition active:scale-95;
+  }
+  .chip[data-on='true'] {
+    @apply border-transparent text-ink;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-bold transition active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-b from-mint to-[#19c4a4] text-ink shadow-glow;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-white/[0.04] text-white/85;
+  }
+  .label {
+    @apply mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-mute;
+  }
+}
+
+/* thin scrollbars on desktop */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 0.25s ease-out both;
+}

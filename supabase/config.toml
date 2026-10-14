@@ -1,0 +1,5 @@
+project_id = "household-money"
+
+# The SMS forwarder (MacroDroid) has no Supabase JWT; the function checks INGEST_SECRET itself.
+[functions.ingest]
+verify_jwt = false
