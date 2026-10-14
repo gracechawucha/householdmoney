@@ -194,12 +194,14 @@ export function useLabel() {
             match_field: 'name',
             match_type: 'equals',
             pattern: v.tx.counterparty,
+            // same payee, same account: a paybill "Tithes" account is not a paybill "Rent" account
+            account_pattern: (v.tx.account_ref ?? '').trim(),
             particulars,
             category_id: v.category_id,
             project_id: v.project_id,
             active: true,
           },
-          { onConflict: 'direction,match_field,match_type,pattern' },
+          { onConflict: 'direction,match_field,match_type,pattern,account_pattern' },
         )
         fail(ruleErr)
         const { data, error: applyErr } = await supabase.rpc('apply_rules')
@@ -256,7 +258,7 @@ export function useUnlabel() {
 export function useCreateCategory() {
   const refresh = useRefresh()
   return useMutation({
-    mutationFn: async (v: { name: string; kind: 'income' | 'expense'; color: string }) => {
+    mutationFn: async (v: { name: string; kind: Category['kind']; color: string }) => {
       const { data, error } = await supabase
         .from('categories')
         .insert({ name: v.name.trim(), kind: v.kind, color: v.color, sort_order: 200 })
@@ -327,7 +329,7 @@ export function useCreateRule() {
     mutationFn: async (v: Omit<Rule, 'id' | 'created_at' | 'active'>) => {
       const { error } = await supabase.from('rules').upsert(
         { ...v, pattern: v.pattern.trim(), particulars: v.particulars.trim(), active: true },
-        { onConflict: 'direction,match_field,match_type,pattern' },
+        { onConflict: 'direction,match_field,match_type,pattern,account_pattern' },
       )
       fail(error)
       const { data, error: applyErr } = await supabase.rpc('apply_rules')

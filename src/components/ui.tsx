@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Plus, Check } from 'lucide-react'
+import { Plus, Check, ArrowLeftRight } from 'lucide-react'
 import { ksh, nextSwatch } from '../lib/format'
 import { useCategories, useCreateCategory } from '../lib/queries'
 
@@ -129,7 +129,8 @@ export function CategoryPicker({
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
 
-  const list = (cats.data ?? []).filter((c) => c.kind === kind && !c.archived)
+  // transfer categories (M-Shwari, own accounts) apply to money in and money out
+  const list = (cats.data ?? []).filter((c) => (c.kind === kind || c.kind === 'transfer') && !c.archived)
 
   const submit = async () => {
     const n = name.trim()
@@ -157,7 +158,7 @@ export function CategoryPicker({
           style={value === c.id ? { background: c.color } : undefined}
           onClick={() => onChange(c.id)}
         >
-          {value !== c.id && <Dot color={c.color} size={8} />}
+          {c.kind === 'transfer' ? <ArrowLeftRight size={13} /> : value !== c.id && <Dot color={c.color} size={8} />}
           {c.name}
         </button>
       ))}

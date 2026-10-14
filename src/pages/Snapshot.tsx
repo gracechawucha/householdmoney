@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { AlertTriangle, ChevronLeft, ChevronRight, RotateCcw, ScanLine, Tag, Wallet } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, ChevronLeft, ChevronRight, RotateCcw, ScanLine, Tag, Wallet } from 'lucide-react'
 import { Dot, Empty, ErrorNote, Money, Segmented, SectionTitle, type Tone } from '../components/ui'
 import { ProjectCard } from '../components/ProjectCard'
 import type { Tab } from '../components/Nav'
@@ -75,6 +75,8 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
     let income = 0
     let spent = 0
     let fees = 0
+    let transferIn = 0 // moves between your own accounts: shown, never counted as income or spending
+    let transferOut = 0
     const inMap = new Map<string, Slice>()
     const outMap = new Map<string, Slice>()
     const add = (m: Map<string, Slice>, key: string, name: string, color: string, v: number) => {
@@ -84,16 +86,26 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
     }
 
     for (const r of rows) {
+      const c = r.category_id ? catById.get(r.category_id) : undefined
+      const isTransfer = c?.kind === 'transfer'
       if (r.direction === 'in') {
+        if (isTransfer) {
+          transferIn += r.amount
+          continue
+        }
         income += r.amount
-        const c = r.category_id ? catById.get(r.category_id) : undefined
         if (c) add(inMap, c.id, c.name, c.color, r.amount)
         else add(inMap, 'unlabeled', 'Unlabeled', UNLABELED, r.amount)
       } else {
-        spent += r.amount + r.fee
+        // a fee is a real cost even when the money itself only moved between your own accounts
         fees += r.fee
+        if (isTransfer) {
+          transferOut += r.amount
+          spent += r.fee
+          continue
+        }
+        spent += r.amount + r.fee
         const p = r.project_id ? projById.get(r.project_id) : undefined
-        const c = r.category_id ? catById.get(r.category_id) : undefined
         if (p) add(outMap, `p:${p.id}`, `Project: ${p.name}`, p.color, r.amount)
         else if (c) add(outMap, c.id, c.name, c.color, r.amount)
         else add(outMap, 'unlabeled', 'Unlabeled', UNLABELED, r.amount)
@@ -102,7 +114,16 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
     if (fees > 0) add(outMap, 'fees', 'Transaction costs', FEES, fees)
 
     const sort = (m: Map<string, Slice>) => [...m.values()].sort((a, b) => b.value - a.value)
-    return { income, spent, fees, net: income - spent, inSlices: sort(inMap), outSlices: sort(outMap) }
+    return {
+      income,
+      spent,
+      fees,
+      net: income - spent,
+      transferIn,
+      transferOut,
+      inSlices: sort(inMap),
+      outSlices: sort(outMap),
+    }
   }, [rows, catById, projById])
 
   const flow = useMemo(() => {
@@ -111,11 +132,13 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
     for (const r of rows) {
       const i = Math.floor((new Date(r.occurred_at).getTime() - start) / size)
       if (i < 0 || i >= bs.length) continue
-      if (r.direction === 'in') bs[i].in += r.amount
-      else bs[i].out += r.amount + r.fee
+      const isTransfer = r.category_id ? catById.get(r.category_id)?.kind === 'transfer' : false
+      if (r.direction === 'in') {
+        if (!isTransfer) bs[i].in += r.amount
+      } else bs[i].out += (isTransfer ? 0 : r.amount) + r.fee
     }
     return bs
-  }, [rows, grain, start, end])
+  }, [rows, grain, start, end, catById])
 
   const balancePoints = useMemo(
     () =>
@@ -229,6 +252,16 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
             <Stat label={s.net >= 0 ? 'Left over' : 'Overspent'} value={s.net} tone="net" />
             <Stat label="Transaction costs" value={s.fees} tone="fee" />
           </div>
+          {(s.transferIn > 0 || s.transferOut > 0) && (
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-line bg-black/20 px-3.5 py-2.5 text-[12px] text-mute">
+              <ArrowLeftRight size={14} className="shrink-0" />
+              <span>
+                Moved between your own accounts: in{' '}
+                <b className="text-white/80">{ksh(s.transferIn, { decimals: false })}</b> · out{' '}
+                <b className="text-white/80">{ksh(s.transferOut, { decimals: false })}</b>. Not counted above.
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -452,7 +485,7 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
 
 function Stat({ label, value, tone, hint }: { label: string; value: number; tone: Tone; hint?: string }) {
   return (
-    <div className="min-w-0">
+    <div className="flex min-w-0 flex-col justify-between">
       <div className="text-[11px] font-bold uppercase leading-tight tracking-[0.12em] text-mute">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal opacity-60">{hint}</span>}

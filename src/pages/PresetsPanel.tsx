@@ -105,6 +105,10 @@ export function PresetsPanel() {
                       {FIELD_LABEL[r.match_field]} {r.match_type === 'equals' ? 'is' : 'contains'}
                     </span>{' '}
                     {r.pattern}
+                    {r.account_pattern === '' && <span className="ml-1.5 text-[11px] font-bold text-mute">· no account</span>}
+                    {r.account_pattern !== '' && r.account_pattern !== '*' && (
+                      <span className="ml-1.5 text-[11px] font-bold text-mute">· acc {r.account_pattern}</span>
+                    )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 truncate text-[12px] text-mute">
                     <span className="font-bold text-white/85">{r.particulars}</span>
@@ -148,6 +152,8 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
   const [field, setField] = useState<Rule['match_field']>('name')
   const [type, setType] = useState<Rule['match_type']>('equals')
   const [pattern, setPattern] = useState('')
+  const [account, setAccount] = useState<'any' | 'none' | 'only'>('any')
+  const [accountText, setAccountText] = useState('')
   const [what, setWhat] = useState('')
   const [mode, setMode] = useState<'category' | 'project'>('category')
   const [cat, setCat] = useState<string | null>(null)
@@ -155,7 +161,9 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
 
   const isOut = direction === 'out'
   const active = (projects.data ?? []).filter((p) => p.status === 'active' && !p.archived)
-  const valid = pattern.trim() && what.trim() && (mode === 'category' ? cat : proj)
+  const accountPattern = account === 'any' ? '*' : account === 'none' ? '' : accountText.trim()
+  const valid =
+    pattern.trim() && what.trim() && (mode === 'category' ? cat : proj) && (account !== 'only' || accountText.trim())
 
   return (
     <form
@@ -170,6 +178,7 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
             match_type: type,
             // names are stored upper-case by the parser; matching is case-insensitive anyway
             pattern: pattern.trim(),
+            account_pattern: accountPattern,
             particulars: what.trim(),
             category_id: mode === 'category' ? cat : null,
             project_id: mode === 'project' ? proj : null,
@@ -202,6 +211,25 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
         <label className="label">Text to match</label>
         <input className="field" value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="e.g. TINGG" autoFocus />
       </div>
+
+      {isOut && (
+        <div>
+          <label className="label">Paybill account / reference</label>
+          <select className="field" value={account} onChange={(e) => setAccount(e.target.value as 'any' | 'none' | 'only')}>
+            <option value="any">Any (or none)</option>
+            <option value="none">Only when there is no account (person or till)</option>
+            <option value="only">Only this account…</option>
+          </select>
+          {account === 'only' && (
+            <input
+              className="field mt-2"
+              value={accountText}
+              onChange={(e) => setAccountText(e.target.value)}
+              placeholder="e.g. 331351#Tithes"
+            />
+          )}
+        </div>
+      )}
 
       <div>
         <label className="label">Label it as (what)</label>

@@ -14,9 +14,16 @@ export function CategoriesPanel() {
       <p className="px-1 text-[13px] text-mute">
         There is deliberately no “Other”. If something doesn't fit, make the category it deserves.
       </p>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
         <Group title="Expense categories" kind="expense" cats={list.filter((c) => c.kind === 'expense')} all={list} />
         <Group title="Income categories" kind="income" cats={list.filter((c) => c.kind === 'income')} all={list} />
+        <Group
+          title="Transfers"
+          kind="transfer"
+          cats={list.filter((c) => c.kind === 'transfer')}
+          all={list}
+          hint="Money moving between your own accounts, like M-Shwari. Shown on the Snapshot but never counted as income or spending."
+        />
       </div>
     </div>
   )
@@ -27,11 +34,13 @@ function Group({
   kind,
   cats,
   all,
+  hint,
 }: {
   title: string
-  kind: 'income' | 'expense'
+  kind: Category['kind']
   cats: Category[]
   all: Category[]
+  hint?: string
 }) {
   const create = useCreateCategory()
   const [name, setName] = useState('')
@@ -51,8 +60,9 @@ function Group({
 
   return (
     <section className="card p-5">
-      <div className="mb-3 text-[17px] font-extrabold">{title}</div>
-      <div className="divide-y divide-line">
+      <div className="text-[17px] font-extrabold">{title}</div>
+      {hint && <p className="mt-1 text-[12px] text-mute">{hint}</p>}
+      <div className="mt-3 divide-y divide-line">
         {active.map((c) => (
           <Row key={c.id} cat={c} />
         ))}

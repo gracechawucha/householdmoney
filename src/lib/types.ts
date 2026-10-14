@@ -3,7 +3,8 @@ export type Direction = 'in' | 'out'
 export interface Category {
   id: string
   name: string
-  kind: 'income' | 'expense'
+  /** 'transfer' = moves between your own accounts (M-Shwari): not income, not spending */
+  kind: 'income' | 'expense' | 'transfer'
   color: string
   sort_order: number
   archived: boolean
@@ -27,6 +28,8 @@ export interface Rule {
   match_field: 'name' | 'phone' | 'account'
   match_type: 'equals' | 'contains'
   pattern: string
+  /** '*' = any account | '' = only when there is no account | 'abc' = only that account/reference */
+  account_pattern: string
   particulars: string
   category_id: string | null
   project_id: string | null
