@@ -5,6 +5,7 @@ import '@fontsource-variable/manrope'
 import './index.css'
 import App from './App'
 import { Gate } from './components/Gate'
+import { InstallPrompt } from './components/InstallPrompt'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
       <Gate>
         <App />
       </Gate>
+      <InstallPrompt />
     </QueryClientProvider>
   </StrictMode>,
 )
