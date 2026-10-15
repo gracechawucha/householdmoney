@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Archive, CheckCircle2, Plus, RotateCcw, X } from 'lucide-react'
+import { Archive, CheckCircle2, Coins, Plus, RotateCcw, X } from 'lucide-react'
 import { ProjectCard } from '../components/ProjectCard'
+import { ProjectModal } from '../components/ProjectModal'
 import { Dot, ErrorNote } from '../components/ui'
 import { SWATCHES } from '../lib/format'
 import {
@@ -105,6 +106,7 @@ export function ProjectsPanel() {
   const update = useUpdateProject()
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
+  const [alloc, setAlloc] = useState<string | null>(null)
 
   const all = (projects.data ?? []).filter((p) => !p.archived)
   const active = all.filter((p) => p.status === 'active')
@@ -174,6 +176,9 @@ export function ProjectsPanel() {
               }}
               extra={
                 <>
+                  <button type="button" className="btn-ghost text-mint" onClick={() => setAlloc(p.id)}>
+                    <Coins size={16} /> Saved / spent
+                  </button>
                   <button
                     type="button"
                     className="btn-ghost text-inflow"
@@ -224,6 +229,13 @@ export function ProjectsPanel() {
             ))}
           </div>
         </div>
+      )}
+      {alloc && projects.data?.find((x) => x.id === alloc) && (
+        <ProjectModal
+          project={projects.data.find((x) => x.id === alloc)!}
+          total={totals.data?.[alloc]}
+          onClose={() => setAlloc(null)}
+        />
       )}
     </div>
   )

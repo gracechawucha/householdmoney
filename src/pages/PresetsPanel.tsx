@@ -114,7 +114,7 @@ export function PresetsPanel() {
                     <span className="font-bold text-white/85">{r.particulars}</span>
                     <span>·</span>
                     <Dot color={p?.color ?? c?.color ?? '#5f8576'} size={8} />
-                    <span className="truncate">{p ? `Project: ${p.name}` : c?.name}</span>
+                    <span className="truncate">{p ? `Project: ${p.name}${r.project_phase === 'save' ? ' (saving)' : ''}` : c?.name}</span>
                   </div>
                 </div>
                 <button
@@ -158,6 +158,7 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
   const [mode, setMode] = useState<'category' | 'project'>('category')
   const [cat, setCat] = useState<string | null>(null)
   const [proj, setProj] = useState<string | null>(null)
+  const [phase, setPhase] = useState<'save' | 'spend'>('spend')
 
   const isOut = direction === 'out'
   const active = (projects.data ?? []).filter((p) => p.status === 'active' && !p.archived)
@@ -182,6 +183,7 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
             particulars: what.trim(),
             category_id: mode === 'category' ? cat : null,
             project_id: mode === 'project' ? proj : null,
+            project_phase: mode === 'project' && isOut ? phase : null,
           },
           { onSuccess: onDone },
         )
@@ -269,6 +271,19 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
                 {p.name}
               </button>
             ))}
+          </div>
+        )}
+        {mode === 'project' && isOut && (
+          <div className="mt-3">
+            <Segmented
+              small
+              value={phase}
+              onChange={setPhase}
+              options={[
+                { value: 'save', label: 'Saving for it' },
+                { value: 'spend', label: 'Spent on it' },
+              ]}
+            />
           </div>
         )}
       </div>

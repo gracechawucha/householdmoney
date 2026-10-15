@@ -1,11 +1,12 @@
-import { LayoutDashboard, ListChecks, FolderKanban } from 'lucide-react'
+import { LayoutDashboard, ListChecks, FolderKanban, Target } from 'lucide-react'
 
-export type Tab = 'labels' | 'snapshot' | 'projects'
+export type Tab = 'labels' | 'snapshot' | 'projects' | 'goals'
 
 const TABS: { id: Tab; label: string; Icon: typeof ListChecks }[] = [
   { id: 'labels', label: 'Labels', Icon: ListChecks },
   { id: 'snapshot', label: 'Snapshot', Icon: LayoutDashboard },
   { id: 'projects', label: 'Projects', Icon: FolderKanban },
+  { id: 'goals', label: 'Goals', Icon: Target },
 ]
 
 /** Mobile: floating pill of buttons fixed at the bottom */
@@ -25,7 +26,7 @@ export function BottomNav({ tab, onChange, badge }: { tab: Tab; onChange: (t: Ta
               onClick={() => onChange(id)}
               aria-label={label}
               aria-current={on ? 'page' : undefined}
-              className={`relative flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-[13px] font-extrabold transition-all ${
+              className={`relative flex flex-1 items-center justify-center rounded-full py-3 text-[12px] font-extrabold transition-all ${
                 on ? 'bg-mint text-ink shadow-glow' : 'text-white/60'
               }`}
             >
@@ -41,7 +42,6 @@ export function BottomNav({ tab, onChange, badge }: { tab: Tab; onChange: (t: Ta
                   </span>
                 )}
               </span>
-              {on && <span>{label}</span>}
             </button>
           )
         })}

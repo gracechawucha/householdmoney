@@ -12,6 +12,11 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background-color: #04100c;
@@ -31,10 +36,10 @@ body {
     @apply rounded-3xl border border-line bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-sm;
   }
   .field {
-    @apply w-full rounded-2xl border border-line bg-black/25 px-4 py-3 text-[15px] text-white placeholder:text-mute/70 outline-none transition focus:border-mint/60 focus:bg-black/35;
+    @apply w-full rounded-2xl border border-line bg-black/25 px-4 py-3 text-[16px] text-white placeholder:text-mute/70 outline-none transition focus:border-mint/60 focus:bg-black/35;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/[0.04] px-3.5 py-2 text-[13px] font-semibold text-white/80 transition active:scale-95;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/[0.04] px-3 py-1.5 text-[13px] font-semibold text-white/80 transition active:scale-95 md:px-3.5 md:py-2;
   }
   .chip[data-on='true'] {
     @apply border-transparent text-ink;

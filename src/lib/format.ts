@@ -59,3 +59,13 @@ export const SWATCHES = [
 export function nextSwatch(used: string[]): string {
   return SWATCHES.find((c) => !used.includes(c)) ?? SWATCHES[used.length % SWATCHES.length]
 }
+
+/** 14 Oct · 11:23am — short enough to never be squeezed out of a row */
+export function shortDateTime(iso: string): string {
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: TZ })
+  const time = d
+    .toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: TZ })
+    .replace(' ', '')
+  return `${date} · ${time}`
+}

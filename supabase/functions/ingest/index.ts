@@ -1,4 +1,4 @@
-// Receives M-Pesa SMS bodies from MacroDroid, stores them raw, parses them into transactions
+// Receives M-Pesa SMS bodies (from the Household SMS Android app, or any forwarder), stores them raw, parses them into transactions
 // and runs the preset rules.
 //
 // Auth: send the secret as  ?key=<INGEST_SECRET>  or header  x-ingest-secret.
@@ -59,23 +59,56 @@ Deno.serve(async (req) => {
   if (!secret || provided !== secret) return json({ error: 'unauthorized' }, 401)
 
   const raw = await req.text()
-  const { message, payload } = extract(raw, req.headers.get('content-type') ?? '')
-  if (!message) return json({ status: 'empty' }, 400)
+  const contentType = req.headers.get('content-type') ?? ''
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false },
   })
 
-  // 1. keep the raw message no matter what happens next
-  const { data: rawRow, error: rawErr } = await db
+  // Sweep check from the Android app: {"codes": [...]} -> which of these M-Pesa codes do we NOT have?
+  if (contentType.includes('json')) {
+    try {
+      const o = JSON.parse(raw)
+      if (o && typeof o === 'object' && Array.isArray(o.codes)) {
+        const codes = (o.codes as unknown[]).filter((c): c is string => typeof c === 'string').slice(0, 500)
+        if (!codes.length) return json({ missing: [] })
+        const { data, error } = await db.from('transactions').select('mpesa_code').in('mpesa_code', codes)
+        if (error) return json({ error: error.message }, 500)
+        const have = new Set((data ?? []).map((r) => r.mpesa_code as string))
+        return json({ missing: codes.filter((c) => !have.has(c)) })
+      }
+    } catch {
+      /* not a sweep check: fall through to a normal message */
+    }
+  }
+
+  const { message, payload } = extract(raw, contentType)
+  if (!message) return json({ status: 'empty' }, 400)
+
+  // The same text twice (a retry, or the sweep re-sending) is never stored again.
+  // A text we could not read before is tried again, so a parser fix rescues it.
+  const { data: prior } = await db
     .from('raw_messages')
-    .insert({ body: message, payload })
-    .select('id')
-    .single()
-  if (rawErr || !rawRow) return json({ error: rawErr?.message ?? 'could not store message' }, 500)
+    .select('id, parse_status')
+    .eq('body', message)
+    .order('received_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (prior && ['parsed', 'duplicate', 'ignored'].includes(prior.parse_status as string)) {
+    return json({ status: 'duplicate' })
+  }
+
+  // 1. keep the raw message no matter what happens next
+  let rawRow: { id: string } | null = prior ? { id: prior.id as string } : null
+  if (!rawRow) {
+    const ins = await db.from('raw_messages').insert({ body: message, payload }).select('id').single()
+    if (ins.error || !ins.data) return json({ error: ins.error?.message ?? 'could not store message' }, 500)
+    rawRow = ins.data as { id: string }
+  }
+  const rawId: string = rawRow.id
 
   const mark = (parse_status: string, parse_error: string | null = null) =>
-    db.from('raw_messages').update({ parse_status, parse_error }).eq('id', rawRow.id)
+    db.from('raw_messages').update({ parse_status, parse_error }).eq('id', rawId)
 
   // 2. parse
   const parsed = parseMpesa(message)
@@ -101,7 +134,7 @@ Deno.serve(async (req) => {
         account_ref: parsed.accountRef,
         occurred_at: parsed.occurredAt,
         balance_after: parsed.balanceAfter,
-        raw_message_id: rawRow.id,
+        raw_message_id: rawId,
       },
       { onConflict: 'mpesa_code', ignoreDuplicates: true },
     )

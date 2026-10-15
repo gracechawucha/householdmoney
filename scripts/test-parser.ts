@@ -12,6 +12,10 @@ const samples = {
     'UJE1A2B3C4 Confirmed. Ksh500.00 sent to JOHN DOE 0712345678 on 13/10/26 at 12:05 PM. New M-PESA balance is Ksh1,000.00. Transaction cost, Ksh7.00. Amount you can transact within the day is 499,500.00.',
   paybill:
     'UJE9Z8Y7X6 Confirmed. Ksh1,250.00 sent to KPLC PREPAID for account 14162345 on 11/10/26 at 12:00 AM. New M-PESA balance is Ksh300.50. Transaction cost, Ksh0.00.',
+  mshwariOut:
+    'UJF1A2B3C4 Confirmed. Ksh9,000.00 transferred to M-Shwari account on 12/10/26 at 8:31 PM. M-Shwari balance is Ksh9,100.00. New M-PESA balance is Ksh1,504.36. Transaction cost, Ksh0.00.',
+  mshwariIn:
+    'UJF9Z8Y7X6 Confirmed. Ksh400.00 transferred from M-Shwari account on 13/10/26 at 7:05 AM. M-Shwari balance is Ksh8,700.00. New M-PESA balance is Ksh1,904.36.',
   promo: 'Dear customer, enjoy 10% off at ... ',
 }
 
@@ -55,3 +59,16 @@ assert.equal(parseMpesa(samples.promo), null)
 assert.equal(+(a.balanceAfter! - b.amount - b.fee).toFixed(2), b.balanceAfter)
 
 console.log('parser: all checks passed')
+
+const m1 = parseMpesa(samples.mshwariOut)!
+assert.equal(m1.txType, 'mshwari')
+assert.equal(m1.direction, 'out')
+assert.equal(m1.counterparty, 'M-SHWARI')
+assert.equal(m1.balanceAfter, 1504.36) // the M-PESA balance, not the M-Shwari one
+
+const m2 = parseMpesa(samples.mshwariIn)!
+assert.equal(m2.txType, 'mshwari')
+assert.equal(m2.direction, 'in')
+assert.equal(m2.balanceAfter, 1904.36)
+
+console.log('M-Shwari parser checks passed')

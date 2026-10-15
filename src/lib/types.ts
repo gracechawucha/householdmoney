@@ -1,10 +1,12 @@
 export type Direction = 'in' | 'out'
+export type ProjectPhase = 'save' | 'spend'
 
 export interface Category {
   id: string
   name: string
-  /** 'transfer' = moves between your own accounts (M-Shwari): not income, not spending */
-  kind: 'income' | 'expense' | 'transfer'
+  /** 'transfer' = moves between your own accounts (M-Shwari): not income, not spending;
+   *  'savings' = money set aside (emergency fund…): not an expense */
+  kind: 'income' | 'expense' | 'transfer' | 'savings'
   color: string
   sort_order: number
   archived: boolean
@@ -33,6 +35,8 @@ export interface Rule {
   particulars: string
   category_id: string | null
   project_id: string | null
+  /** for project rules: 'save' = set aside (savings), 'spend' = spent on it (expense) */
+  project_phase: ProjectPhase | null
   active: boolean
   created_at: string
 }
@@ -52,6 +56,7 @@ export interface Tx {
   particulars: string | null
   category_id: string | null
   project_id: string | null
+  project_phase: ProjectPhase | null
   status: 'unlabeled' | 'labeled'
   label_source: 'rule' | 'manual' | null
   rule_id: string | null
@@ -65,6 +70,17 @@ export interface ProjectTotal {
   spent: number
   tx_count: number
   last_at: string
+  saved: number
+  save_count: number
+}
+
+export interface IncomeGoal {
+  id: string
+  kind: 'month' | '3m' | '6m'
+  amount: number
+  /** first day of the month the goal starts applying, YYYY-MM-DD */
+  starts_on: string
+  created_at: string
 }
 
 export interface RawMessage {

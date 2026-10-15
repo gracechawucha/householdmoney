@@ -601,3 +601,4 @@ select count(*)                                              as transactions,
        sum(amount + fee) filter (where direction = 'out')    as paid_out_incl_fees
   from public.transactions
  where occurred_at >= '2026-09-01 00:00:00+03' and occurred_at < '2026-10-15 00:00:00+03';
+ 

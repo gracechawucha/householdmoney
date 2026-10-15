@@ -14,6 +14,8 @@ M-Pesa SMS ─► MacroDroid ─► Edge Function `ingest` ─► raw_messages +
 |---|---|
 | `migrations/0001_init.sql` | Whole database: tables, rules engine, balance-chain view, access gate, seed categories |
 | `migrations/0002_backfill_sep_oct_2026.sql` | Account-aware presets, transfers, and the Sep–Oct 2026 history |
+| `migrations/0003_project_phases_goals.sql` | Project save/spend phases, income goals, M-Shwari clean-up. Run once in the SQL editor, then redeploy the app |
+| `migrations/0004_savings_settings.sql` | Savings categories (emergency fund etc.) and a small settings table. Run once after 0003 |
 | `supabase/functions/ingest/` | Webhook that receives the SMS, stores it raw, parses it, runs presets |
 | `src/` | The React app (Vite + TypeScript + Tailwind + Recharts), installable as a PWA |
 | `scripts/test-parser.ts` | Parser checks against real messages (`npm run test:parser`) |
@@ -91,3 +93,12 @@ Moves between your own accounts (M-Shwari) are a third category kind, **Transfer
 
 ## Security model (honest version)
 No Supabase Auth. The database only answers requests that carry the household key (`x-app-key` header, checked by row level security), and the webhook only accepts `INGEST_SECRET`. The service-role key lives only inside the Edge Function. That's right for a two-person app. If it ever grows, swap in Supabase Auth.
+
+## Projects: saving vs spending
+Labeling money out for a project asks which phase it is. **Saving for it** counts as Savings (never an expense). **Spent on it** is an expense and uses up that project's savings. Each project card shows Saved, Spent and Savings left.
+
+## Goals
+The Goals tab holds a monthly, a 3-month and a 6-month income goal. A goal applies from the month you pick, so past months keep the goal they had. M-Shwari moves never count as income.
+
+## Webhook health
+The Snapshot shows when the webhook last heard an SMS, and **Add a missed message** lets you paste an M-Pesa SMS the phone never forwarded. The parser now understands M-Shwari messages and reads the M-PESA balance (not the M-Shwari one) so the balance chain stays intact. Redeploy the `ingest` function after pulling.

@@ -18,6 +18,13 @@ export function CategoriesPanel() {
         <Group title="Expense categories" kind="expense" cats={list.filter((c) => c.kind === 'expense')} all={list} />
         <Group title="Income categories" kind="income" cats={list.filter((c) => c.kind === 'income')} all={list} />
         <Group
+          title="Savings"
+          kind="savings"
+          cats={list.filter((c) => c.kind === 'savings')}
+          all={list}
+          hint="Money set aside, like an emergency fund. Counts as Savings, never as an expense."
+        />
+        <Group
           title="Transfers"
           kind="transfer"
           cats={list.filter((c) => c.kind === 'transfer')}

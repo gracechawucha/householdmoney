@@ -14,10 +14,10 @@ const TONE: Record<Tone, string> = {
 }
 
 const SIZE: Record<string, string> = {
-  hero: 'text-[44px] md:text-[56px] leading-none font-extrabold tracking-tight',
-  xl: 'text-3xl font-extrabold tracking-tight',
-  lg: 'text-2xl font-bold tracking-tight',
-  md: 'text-[17px] font-bold',
+  hero: 'text-[34px] sm:text-[44px] md:text-[56px] leading-none font-extrabold tracking-tight',
+  xl: 'text-2xl md:text-3xl font-extrabold tracking-tight',
+  lg: 'text-[19px] md:text-2xl font-bold tracking-tight',
+  md: 'text-[16px] md:text-[17px] font-bold',
   sm: 'text-sm font-semibold',
 }
 
@@ -82,8 +82,8 @@ export function Segmented<T extends string>({
 
 export function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-3 px-1">
-      <h2 className="text-[17px] font-extrabold tracking-tight">{children}</h2>
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 px-1">
+      <h2 className="min-w-0 text-[16px] font-extrabold tracking-tight md:text-[17px]">{children}</h2>
       {aside}
     </div>
   )
@@ -120,7 +120,7 @@ export function CategoryPicker({
   value,
   onChange,
 }: {
-  kind: 'income' | 'expense'
+  kind: 'income' | 'expense' | 'savings'
   value: string | null
   onChange: (id: string) => void
 }) {
@@ -130,7 +130,9 @@ export function CategoryPicker({
   const [name, setName] = useState('')
 
   // transfer categories (M-Shwari, own accounts) apply to money in and money out
-  const list = (cats.data ?? []).filter((c) => (c.kind === kind || c.kind === 'transfer') && !c.archived)
+  const list = (cats.data ?? []).filter(
+    (c) => !c.archived && (kind === 'savings' ? c.kind === 'savings' : c.kind === kind || c.kind === 'transfer'),
+  )
 
   const submit = async () => {
     const n = name.trim()

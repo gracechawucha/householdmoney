@@ -22,9 +22,12 @@ export function ProjectCard({
   onClick?: () => void
 }) {
   const spent = total?.spent ?? 0
+  const saved = total?.saved ?? 0
   const target = project.target_amount
-  const ratio = target > 0 ? spent / target : 0
+  const savedRatio = target > 0 ? saved / target : 0
+  const spentRatio = target > 0 ? spent / target : 0
   const over = target > 0 && spent > target
+  const available = saved - spent // savings not yet used
   const left = daysLeft(project.deadline)
 
   return (
@@ -32,7 +35,7 @@ export function ProjectCard({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className="card pop-in block w-full p-5 text-left transition enabled:active:scale-[0.99]"
+      className="card pop-in block w-full min-w-0 p-4 text-left md:p-5 transition enabled:active:scale-[0.99]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -50,50 +53,62 @@ export function ProjectCard({
         )}
       </div>
 
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Spent so far</div>
-          <Money value={spent} tone={over ? 'out' : 'neutral'} size="lg" decimals={false} prefix="Ksh" />
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-mute">Saved</div>
+          <Money value={saved} tone="net" size="md" decimals={false} />
         </div>
-        {target > 0 && (
-          <div className="text-right">
-            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Target</div>
-            <div className="text-[15px] font-bold text-white/80">{ksh(target, { decimals: false })}</div>
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-mute">Spent</div>
+          <Money value={spent} tone={over ? 'out' : 'neutral'} size="md" decimals={false} />
+        </div>
+        <div className="min-w-0 text-right">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-mute">
+            {available < 0 ? 'Beyond savings' : 'Savings left'}
           </div>
-        )}
+          <Money value={Math.abs(available)} tone={available < 0 ? 'out' : 'in'} size="md" decimals={false} />
+        </div>
       </div>
 
       {target > 0 && (
-        <>
-          {/* filled part: yellow → lime like the reference; remainder is hatched */}
-          <div
-            className="mt-4 h-3.5 overflow-hidden rounded-full"
-            style={{
-              background:
-                'repeating-linear-gradient(135deg, rgba(255,255,255,0.14) 0 2px, transparent 2px 6px), rgba(255,255,255,0.05)',
-            }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.min(100, ratio * 100)}%`,
-                background: over
-                  ? 'linear-gradient(90deg,#fb923c,#ff8a5b)'
-                  : 'linear-gradient(90deg,#facc15,#a3e635)',
-              }}
-            />
-          </div>
-          <div className="mt-2 flex justify-between text-[12px] font-semibold">
-            <span className={over ? 'text-outflow' : 'text-inflow'}>{pct(ratio * 100)}</span>
-            <span className="text-mute">
-              {over
-                ? `Over by Ksh ${ksh(spent - target, { decimals: false })}`
-                : `Ksh ${ksh(target - spent, { decimals: false })} to go`}
-              {total ? ` · ${total.tx_count} payment${total.tx_count === 1 ? '' : 's'}` : ''}
+        <div className="mt-4 space-y-3">
+          <Bar label="Saved" ratio={savedRatio} color="linear-gradient(90deg,#2de2c0,#a3e635)" />
+          <Bar
+            label="Spent"
+            ratio={spentRatio}
+            color={over ? 'linear-gradient(90deg,#fb923c,#ff8a5b)' : 'linear-gradient(90deg,#facc15,#fb923c)'}
+          />
+          <div className="flex justify-between gap-3 text-[12px] font-semibold text-mute">
+            <span>Goal Ksh {ksh(target, { decimals: false })}</span>
+            <span className="text-right">
+              {saved >= target
+                ? 'Fully saved'
+                : `Ksh ${ksh(target - saved, { decimals: false })} still to save`}
+              {total ? ` · ${total.save_count} saved · ${total.tx_count} spent` : ''}
             </span>
           </div>
-        </>
+        </div>
       )}
     </button>
+  )
+}
+
+function Bar({ label, ratio, color }: { label: string; ratio: number; color: string }) {
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-[11px] font-bold">
+        <span className="text-mute">{label}</span>
+        <span className="text-white/80">{pct(ratio * 100)}</span>
+      </div>
+      <div
+        className="h-3 overflow-hidden rounded-full"
+        style={{
+          background:
+            'repeating-linear-gradient(135deg, rgba(255,255,255,0.14) 0 2px, transparent 2px 6px), rgba(255,255,255,0.05)',
+        }}
+      >
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, ratio * 100)}%`, background: color }} />
+      </div>
+    </div>
   )
 }

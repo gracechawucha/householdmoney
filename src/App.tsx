@@ -3,10 +3,12 @@ import { BottomNav, TopTabs, type Tab } from './components/Nav'
 import { Labels } from './pages/Labels'
 import { Snapshot } from './pages/Snapshot'
 import { Setup } from './pages/Setup'
+import { Goals } from './pages/Goals'
+import { Suggestions } from './components/LabelForm'
 import { useUnlabeled } from './lib/queries'
 import { onToast } from './lib/toast'
 
-const TABS: Tab[] = ['labels', 'snapshot', 'projects']
+const TABS: Tab[] = ['labels', 'snapshot', 'projects', 'goals']
 
 function initialTab(): Tab {
   const h = window.location.hash.replace('#', '') as Tab
@@ -39,12 +41,13 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen max-w-[100vw] overflow-x-clip">
+      <Suggestions />
       <header
         className="sticky top-0 z-20 border-b border-line bg-ink/70 backdrop-blur-xl"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-3 py-2.5 sm:px-4 md:px-8 md:py-3">
           <div className="flex items-center gap-3">
             <img src="/icons/icon-192.png" alt="" className="h-9 w-9 rounded-xl" />
             <div className="leading-tight">
@@ -56,10 +59,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pb-32 pt-5 md:px-8 md:pb-16 md:pt-8">
+      <main className="mx-auto max-w-6xl px-3 pb-32 pt-4 sm:px-4 md:px-8 md:pb-16 md:pt-8">
         {tab === 'labels' && <Labels />}
         {tab === 'snapshot' && <Snapshot goto={go} />}
         {tab === 'projects' && <Setup />}
+        {tab === 'goals' && <Goals />}
       </main>
 
       <BottomNav tab={tab} onChange={go} badge={badge} />

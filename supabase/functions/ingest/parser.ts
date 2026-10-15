@@ -1,7 +1,7 @@
 // M-Pesa SMS parser. Pure TypeScript, no imports, so it runs in Deno (edge function) and Node (tests).
 
 export type Direction = 'in' | 'out'
-export type TxType = 'paid' | 'sent' | 'received' | 'withdraw' | 'airtime'
+export type TxType = 'paid' | 'sent' | 'received' | 'withdraw' | 'airtime' | 'mshwari'
 
 export interface ParsedTx {
   code: string
@@ -20,6 +20,11 @@ const AMT = '([\\d,]+(?:\\.\\d+)?)'
 const ON = ' on (?=\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})'
 
 const PATTERNS: { type: TxType; dir: Direction; re: RegExp }[] = [
+  // M-Shwari moves first: "withdrawn from M-Shwari" must not be read as a cash withdrawal,
+  // and "received … from M-Shwari" is a transfer, not income.
+  { type: 'mshwari', dir: 'out', re: new RegExp(`Ksh ?${AMT} (?:transferred|sent|deposited|moved|paid) to (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
+  { type: 'mshwari', dir: 'in', re: new RegExp(`Ksh ?${AMT} (?:transferred|withdrawn|received|sent) from (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
+  { type: 'mshwari', dir: 'in', re: new RegExp(`received Ksh ?${AMT} from (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
   { type: 'paid', dir: 'out', re: new RegExp(`Ksh ?${AMT} paid to (.+?)\\.?${ON}`, 'i') },
   { type: 'sent', dir: 'out', re: new RegExp(`Ksh ?${AMT} sent to (.+?)${ON}`, 'i') },
   { type: 'received', dir: 'in', re: new RegExp(`received Ksh ?${AMT} from (.+?)${ON}`, 'i') },
@@ -79,7 +84,9 @@ export function parseMpesa(input: string): ParsedTx | null {
     let phone: string | null = null
     let account: string | null = null
 
-    if (p.type === 'airtime') {
+    if (p.type === 'mshwari') {
+      name = 'M-SHWARI' // same payee the presets and the statement backfill use
+    } else if (p.type === 'airtime') {
       name = 'M-PESA AIRTIME'
       phone = m[2]?.trim() || null
     } else {
@@ -89,7 +96,9 @@ export function parseMpesa(input: string): ParsedTx | null {
       account = party.account
     }
 
-    const bal = t.match(/balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i)
+    // M-Shwari messages also quote the M-Shwari balance: we want the M-PESA one, or the chain breaks
+    const bal =
+      t.match(/M-?PESA balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i) ?? t.match(/balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i)
     const fee = t.match(/Transaction cost,? ?Ksh ?([\d,]+(?:\.\d+)?)/i)
 
     return {
