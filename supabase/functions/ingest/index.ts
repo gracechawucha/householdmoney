@@ -4,7 +4,7 @@
 // Auth: send the secret as  ?key=<INGEST_SECRET>  or header  x-ingest-secret.
 // Body: plain text (the SMS), or JSON / form data containing the SMS in a field like "message".
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { parseMpesa } from './parser.ts'
+import { isBalanceEnquiry, parseMpesa } from './parser.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -72,9 +72,11 @@ Deno.serve(async (req) => {
       if (o && typeof o === 'object' && Array.isArray(o.codes)) {
         const codes = (o.codes as unknown[]).filter((c): c is string => typeof c === 'string').slice(0, 500)
         if (!codes.length) return json({ missing: [] })
-        const { data, error } = await db.from('transactions').select('mpesa_code').in('mpesa_code', codes)
+        const { data, error } = await db.from('transactions').select('mpesa_code, balance_after').in('mpesa_code', codes)
         if (error) return json({ error: error.message }, 500)
-        const have = new Set((data ?? []).map((r) => r.mpesa_code as string))
+        // A row with no M-PESA balance came from a business-account message: its personal M-Pesa
+        // twin (same code) may still be on the phone, so ask for it too.
+        const have = new Set((data ?? []).filter((r) => r.balance_after !== null).map((r) => r.mpesa_code as string))
         return json({ missing: codes.filter((c) => !have.has(c)) })
       }
     } catch {
@@ -114,7 +116,7 @@ Deno.serve(async (req) => {
   const parsed = parseMpesa(message)
   if (!parsed) {
     // M-Pesa confirmations we can't read are surfaced in the app; everything else (promos) is ignored
-    const status = /confirmed/i.test(message) ? 'unparsed' : 'ignored'
+    const status = /confirmed/i.test(message) && !isBalanceEnquiry(message) ? 'unparsed' : 'ignored'
     await mark(status, status === 'unparsed' ? 'no matching message pattern' : null)
     return json({ status })
   }
@@ -146,6 +148,36 @@ Deno.serve(async (req) => {
     return json({ status: 'error', error: txErr.message })
   }
   if (!txRow) {
+    // Same code twice is normal for money moved out of a till: the business message and the personal
+    // M-PESA message share a code. If the first one in had no M-PESA balance and is still unlabeled,
+    // the personal message is the truth: it carries the right direction and the balance chain.
+    if (parsed.balanceAfter !== null) {
+      const { data: existing } = await db
+        .from('transactions')
+        .select('id, balance_after, status')
+        .eq('mpesa_code', parsed.code)
+        .maybeSingle()
+      if (existing && existing.balance_after === null && existing.status === 'unlabeled') {
+        await db
+          .from('transactions')
+          .update({
+            direction: parsed.direction,
+            tx_type: parsed.txType,
+            amount: parsed.amount,
+            fee: parsed.fee,
+            counterparty: parsed.counterparty,
+            counterparty_phone: parsed.counterpartyPhone,
+            account_ref: parsed.accountRef,
+            occurred_at: parsed.occurredAt,
+            balance_after: parsed.balanceAfter,
+            raw_message_id: rawId,
+          })
+          .eq('id', existing.id)
+        await mark('parsed')
+        const { data: labeled } = await db.rpc('apply_rules', { p_txn: existing.id })
+        return json({ status: 'upgraded', code: parsed.code, auto_labeled: Number(labeled ?? 0) > 0 })
+      }
+    }
     await mark('duplicate')
     return json({ status: 'duplicate', code: parsed.code })
   }

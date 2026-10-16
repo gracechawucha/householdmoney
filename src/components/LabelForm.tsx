@@ -86,7 +86,7 @@ export function LabelForm({
   const [cat, setCat] = useState<string | null>(startKind === 'savings' ? null : initial?.category_id ?? null)
   const [sav, setSav] = useState<string | null>(startKind === 'savings' ? initial?.category_id ?? null : null)
   const [proj, setProj] = useState<string | null>(initial?.project_id ?? null)
-  const [phase, setPhase] = useState<ProjectPhase>(initial?.project_phase ?? 'spend')
+  const [phase, setPhase] = useState<ProjectPhase>(initial?.project_phase ?? 'save')
   const [remember, setRemember] = useState(defaultRemember)
 
   const valid = what.trim().length > 0 && (mode === 'category' ? !!cat : mode === 'savings' ? !!sav : !!proj)

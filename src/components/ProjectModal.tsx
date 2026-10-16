@@ -61,7 +61,7 @@ export function ProjectModal({ project, total, onClose }: { project: Project; to
 
       <ul className="divide-y divide-line">
         {rows.map((t) => {
-          const phase: ProjectPhase = t.project_phase === 'save' ? 'save' : 'spend'
+          const phase: ProjectPhase = t.project_phase === 'spend' ? 'spend' : 'save'
           return (
             <li key={t.id} className="px-4 py-2.5">
               <div className="flex min-w-0 items-center gap-2.5">

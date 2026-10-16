@@ -114,7 +114,7 @@ export function PresetsPanel() {
                     <span className="font-bold text-white/85">{r.particulars}</span>
                     <span>·</span>
                     <Dot color={p?.color ?? c?.color ?? '#5f8576'} size={8} />
-                    <span className="truncate">{p ? `Project: ${p.name}${r.project_phase === 'save' ? ' (saving)' : ''}` : c?.name}</span>
+                    <span className="truncate">{p ? `Project: ${p.name}${r.project_phase !== 'spend' ? ' (saving)' : ''}` : c?.name}</span>
                   </div>
                 </div>
                 <button
@@ -158,7 +158,7 @@ function RuleForm({ direction, onDone }: { direction: Direction; onDone: () => v
   const [mode, setMode] = useState<'category' | 'project'>('category')
   const [cat, setCat] = useState<string | null>(null)
   const [proj, setProj] = useState<string | null>(null)
-  const [phase, setPhase] = useState<'save' | 'spend'>('spend')
+  const [phase, setPhase] = useState<'save' | 'spend'>('save')
 
   const isOut = direction === 'out'
   const active = (projects.data ?? []).filter((p) => p.status === 'active' && !p.archived)

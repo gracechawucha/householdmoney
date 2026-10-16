@@ -190,7 +190,7 @@ export interface LabelInput {
 }
 
 const phaseOf = (project_id: string | null, phase?: ProjectPhase | null): ProjectPhase | null =>
-  project_id ? phase ?? 'spend' : null
+  project_id ? phase ?? 'save' : null
 
 export function useLabel() {
   const qc = useQueryClient()

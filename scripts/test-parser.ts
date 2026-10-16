@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { parseMpesa } from '../supabase/functions/ingest/parser.ts'
+import { isBalanceEnquiry, parseMpesa } from '../supabase/functions/ingest/parser.ts'
 
 const samples = {
   paidPerson:
@@ -72,3 +72,20 @@ assert.equal(m2.direction, 'in')
 assert.equal(m2.balanceAfter, 1904.36)
 
 console.log('M-Shwari parser checks passed')
+
+const eq = parseMpesa(
+  'UJBTT7A5YX Confirmed.  Ksh200.00   transferred to Equity Paybill Account for account 331351#Tithes on 11/10/26 at 12:39 PM. Merchant Account Balance is Ksh1,889.93.',
+)!
+assert.equal(eq.direction, 'out')
+assert.equal(eq.amount, 200)
+assert.equal(eq.accountRef, '331351#Tithes')
+assert.equal(eq.balanceAfter, null) // merchant balance must not enter the M-PESA chain
+
+const till = parseMpesa(
+  'UJFFWAH2C8 Confirmed. Ksh200.00 sent to LLOYD   MWANGI 0746183991 on 15/10/26 at 7:00 PM. . New Merchant Account Balance is Ksh129.93. Transaction cost, Ksh0.00.',
+)!
+assert.equal(till.balanceAfter, null)
+
+assert.ok(isBalanceEnquiry('UJFFWAE9UP Confirmed . Your M-Shwari Deposit Account balance is Ksh103.85 .Transaction cost Ksh 0.00.'))
+assert.ok(isBalanceEnquiry('UIQFW84E4M Confirmed. Your account balance was: M-PESA Account : Ksh343.89 M-PESA Pochi Account : Ksh0.00 on 26/9/26 at 7:08 PM.'))
+console.log('merchant / enquiry parser checks passed')

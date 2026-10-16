@@ -25,6 +25,8 @@ const PATTERNS: { type: TxType; dir: Direction; re: RegExp }[] = [
   { type: 'mshwari', dir: 'out', re: new RegExp(`Ksh ?${AMT} (?:transferred|sent|deposited|moved|paid) to (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
   { type: 'mshwari', dir: 'in', re: new RegExp(`Ksh ?${AMT} (?:transferred|withdrawn|received|sent) from (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
   { type: 'mshwari', dir: 'in', re: new RegExp(`received Ksh ?${AMT} from (M-? ?SHWARI.*?)\\.?${ON}`, 'i') },
+  // "transferred to Equity Paybill Account for account 331351#Tithes": a payment from a business account
+  { type: 'paid', dir: 'out', re: new RegExp(`Ksh ?${AMT} transferred to (.+?)\\.?${ON}`, 'i') },
   { type: 'paid', dir: 'out', re: new RegExp(`Ksh ?${AMT} paid to (.+?)\\.?${ON}`, 'i') },
   { type: 'sent', dir: 'out', re: new RegExp(`Ksh ?${AMT} sent to (.+?)${ON}`, 'i') },
   { type: 'received', dir: 'in', re: new RegExp(`received Ksh ?${AMT} from (.+?)${ON}`, 'i') },
@@ -97,8 +99,10 @@ export function parseMpesa(input: string): ParsedTx | null {
     }
 
     // M-Shwari messages also quote the M-Shwari balance: we want the M-PESA one, or the chain breaks
+    // A business (till) message quotes the MERCHANT balance, not the M-PESA one: never let it into the chain.
     const bal =
-      t.match(/M-?PESA balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i) ?? t.match(/balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i)
+      t.match(/M-?PESA balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i) ??
+      (/merchant account balance/i.test(t) ? null : t.match(/balance is Ksh ?(-?[\d,]+(?:\.\d+)?)/i))
     const fee = t.match(/Transaction cost,? ?Ksh ?([\d,]+(?:\.\d+)?)/i)
 
     return {
@@ -115,4 +119,10 @@ export function parseMpesa(input: string): ParsedTx | null {
     }
   }
   return null
+}
+
+/** "Your account balance was…", "Your M-Shwari Deposit Account balance is…": a balance check, no money moved. */
+export function isBalanceEnquiry(input: string): boolean {
+  const t = input.replace(/\s+/g, ' ')
+  return /your (?:m-?pesa )?account balance was|your m-?shwari[^.]*balance is/i.test(t)
 }

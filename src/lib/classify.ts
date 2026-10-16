@@ -23,7 +23,8 @@ export function flowOf(r: TxLite, catById: Map<string, Category>): Flow {
   if (r.category_id && catById.get(r.category_id)?.kind === 'transfer') return 'transfer'
   if (r.direction === 'in') return 'income'
   if (r.category_id && catById.get(r.category_id)?.kind === 'savings') return 'save'
-  if (r.project_id && r.project_phase === 'save') return 'save'
+  // money put toward a project is held, not spent, unless it is explicitly marked 'spend'
+  if (r.project_id && r.project_phase !== 'spend') return 'save'
   return 'spend'
 }
 

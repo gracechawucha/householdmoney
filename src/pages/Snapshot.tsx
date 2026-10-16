@@ -856,7 +856,7 @@ export function Snapshot({ goto }: { goto: (t: Tab) => void }) {
                       {r.status === 'unlabeled' ? (
                         <span className="font-bold text-fee">Unlabeled</span>
                       ) : (
-                        <>{p ? `Project: ${p.name}${r.project_phase === 'save' ? ' · saving' : ''}` : c?.name}</>
+                        <>{p ? `Project: ${p.name}${r.project_phase !== 'spend' ? ' · saving' : ''}` : c?.name}</>
                       )}
                       {' · '}
                       {dateTime(r.occurred_at)}

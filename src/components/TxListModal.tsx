@@ -142,7 +142,7 @@ export function TxListModal({
                       {t.status === 'unlabeled' ? (
                         <span className="font-bold text-fee">Unlabeled</span>
                       ) : p ? (
-                        `${p.name}${t.project_phase === 'save' ? ' · saving' : ''}`
+                        `${p.name}${t.project_phase !== 'spend' ? ' · saving' : ''}`
                       ) : (
                         c?.name
                       )}
